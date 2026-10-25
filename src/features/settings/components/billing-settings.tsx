@@ -5,13 +5,13 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { PRICING_URL, SUPPORT_MAILTO } from "@/config/brand";
 import { billingService } from "@/features/settings";
 import { logger } from "@/lib/logger";
 import { useAuthStore } from "@/stores/auth-store";
 
 function handleUpgrade() {
-  const paymentLink =
-    process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK ?? "mailto:support@nulink.com?subject=Upgrade%20Request";
+  const paymentLink = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK ?? `${SUPPORT_MAILTO}?subject=Upgrade%20Request`;
   window.open(paymentLink, "_blank");
 }
 
@@ -58,7 +58,7 @@ export function BillingSettings() {
         <div className="flex items-center gap-2">
           <Button
             className="bg-background"
-            onClick={() => window.open("mailto:support@nulink.com", "_blank")}
+            onClick={() => window.open(SUPPORT_MAILTO, "_blank")}
             variant="outline"
           >
             Contact Support
@@ -182,14 +182,20 @@ export function BillingSettings() {
 
       {/* Footer */}
       <div className="flex items-center justify-between rounded-b-xl border-t bg-muted/50 px-6 py-4">
+        {/* Hidden until NEXT_PUBLIC_PRICING_URL is set, so the link can never
+            point at a page that does not exist. */}
         <div className="text-sm text-muted-foreground">
-          Learn more about{" "}
-          <button
-            className="ml-1 inline-flex items-center text-primary hover:underline"
-            onClick={() => window.open("https://nulink.com/pricing", "_blank")}
-          >
-            Pricing and Plans <ExternalLink className="ml-1 size-3" />
-          </button>
+          {PRICING_URL ? (
+            <>
+              Learn more about{" "}
+              <button
+                className="ml-1 inline-flex items-center text-primary hover:underline"
+                onClick={() => window.open(PRICING_URL, "_blank")}
+              >
+                Pricing and Plans <ExternalLink className="ml-1 size-3" />
+              </button>
+            </>
+          ) : null}
         </div>
         <Button disabled={isLoading} onClick={handleUpgrade}>
           {isLoading ? <Spinner className="mr-2 size-4" /> : null}

@@ -1,8 +1,8 @@
 "use client";
 
 import { ChevronsUpDown } from "lucide-react";
-import Image from "next/image";
 
+import { BrandWordmark } from "@/components/brand";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,18 +16,12 @@ import { cn } from "@/lib/utils";
 
 import { getSidebarPopupClasses } from "./sidebar-popup";
 
-function NulinkLogo() {
-  return (
-    <span className="relative flex h-[30px] shrink-0 items-center">
-      <Image alt="" className="h-[30px] w-auto dark:invert" height={151} src="/icons/Vector.svg" width={146} />
-    </span>
-  );
-}
-
-export function NulinkBrand() {
+export function TruestBrand() {
   return (
     <div className="flex h-[30px] items-center px-1.5">
-      <NulinkLogo />
+      <span className="relative flex h-[30px] shrink-0 items-center">
+        <BrandWordmark className="h-[22px] w-auto" />
+      </span>
     </div>
   );
 }

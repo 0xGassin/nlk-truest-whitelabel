@@ -6,7 +6,7 @@
  * which is kept here for the life of the tab and sent on every API call.
  * An expired token is treated as absent.
  */
-const STORAGE_KEY = "nulink.session-token";
+const STORAGE_KEY = "truest.session-token";
 
 interface StoredToken {
   expires_at: string;

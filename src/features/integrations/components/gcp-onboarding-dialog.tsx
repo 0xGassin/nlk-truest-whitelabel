@@ -341,7 +341,7 @@ export function GCPOnboardingDialog({ onOpenChange, open }: GCPOnboardingDialogP
             content: (
               <IntegrationStepBody>
                 <IntegrationStepIntro>
-                  Create a read-only service account in the GCP Console so NuLink can scan your project. The console
+                  Create a read-only service account in the GCP Console so Truest can scan your project. The console
                   opens in a new browser tab.
                 </IntegrationStepIntro>
                 <IntegrationStepInstructions
@@ -353,7 +353,7 @@ export function GCPOnboardingDialog({ onOpenChange, open }: GCPOnboardingDialogP
                   ]}
                 />
                 <IntegrationStepNote>
-                  Name the account with &quot;nulink&quot; in it, then assign Security Reviewer and Viewer roles.
+                  Name the account with &quot;truest&quot; in it, then assign Security Reviewer and Viewer roles.
                 </IntegrationStepNote>
               </IntegrationStepBody>
             ),

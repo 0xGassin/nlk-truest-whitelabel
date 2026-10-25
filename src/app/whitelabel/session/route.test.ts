@@ -25,7 +25,7 @@ interface PartnerCall {
   url: string;
 }
 
-/** Answers the two partner calls the way nulink-root does, recording each one. */
+/** Answers the two partner calls the way the partner API does, recording each one. */
 function partnerAPI({ provisionStatus = 201 }: { provisionStatus?: number } = {}) {
   const calls: PartnerCall[] = [];
   const fetchMock = vi.fn((url: string, init: RequestInit = {}) => {
@@ -62,13 +62,13 @@ function jsonBody(call: PartnerCall): unknown {
 
 describe("whitelabel sign-in route", () => {
   beforeEach(() => {
-    process.env.NULINK_PARTNER_API_KEY = "nlk_test_key";
-    process.env.NULINK_ROOT_API_URL = "https://rapi.example.com/api/v1";
+    process.env.PARTNER_API_KEY = "nlk_test_key";
+    process.env.PARTNER_API_URL = "https://rapi.example.com/api/v1";
     process.env.WHITELABEL_DEMO_EMAIL = CREDENTIALS.email;
     process.env.WHITELABEL_DEMO_PASSWORD = CREDENTIALS.password;
-    process.env.NULINK_PARTNER_EXTERNAL_ID = "truest-demo-client";
-    process.env.NULINK_PARTNER_CLIENT_NAME = "Truest Demo";
-    delete process.env.NULINK_PARTNER_ORG_ID;
+    process.env.PARTNER_EXTERNAL_ID = "truest-demo-client";
+    process.env.PARTNER_CLIENT_NAME = "Truest Demo";
+    delete process.env.PARTNER_ORG_ID;
     vi.spyOn(console, "error").mockImplementation(vi.fn());
     vi.spyOn(console, "info").mockImplementation(vi.fn());
   });
@@ -113,7 +113,7 @@ describe("whitelabel sign-in route", () => {
   });
 
   it("skips provisioning when an org id is configured", async () => {
-    process.env.NULINK_PARTNER_ORG_ID = ORG_ID;
+    process.env.PARTNER_ORG_ID = ORG_ID;
     const { calls, fetchMock } = partnerAPI();
     vi.stubGlobal("fetch", fetchMock);
 
@@ -128,7 +128,7 @@ describe("whitelabel sign-in route", () => {
   it("refuses to provision rather than risk creating a second organization", async () => {
     // Neither the org id nor an explicit external id: guessing one here would
     // mint a new empty org instead of reusing the configured one.
-    delete process.env.NULINK_PARTNER_EXTERNAL_ID;
+    delete process.env.PARTNER_EXTERNAL_ID;
     const { calls, fetchMock } = partnerAPI();
     vi.stubGlobal("fetch", fetchMock);
 
@@ -171,7 +171,7 @@ describe("whitelabel sign-in route", () => {
   });
 
   it("reports a missing configuration instead of signing anyone in", async () => {
-    delete process.env.NULINK_PARTNER_API_KEY;
+    delete process.env.PARTNER_API_KEY;
     const { fetchMock } = partnerAPI();
     vi.stubGlobal("fetch", fetchMock);
 
@@ -185,9 +185,9 @@ describe("whitelabel sign-in route", () => {
 
 describe("automatic whitelabel sign-in route", () => {
   beforeEach(() => {
-    process.env.NULINK_PARTNER_API_KEY = "nlk_test_key";
-    process.env.NULINK_ROOT_API_URL = "https://rapi.example.com/api/v1";
-    process.env.NULINK_PARTNER_ORG_ID = ORG_ID;
+    process.env.PARTNER_API_KEY = "nlk_test_key";
+    process.env.PARTNER_API_URL = "https://rapi.example.com/api/v1";
+    process.env.PARTNER_ORG_ID = ORG_ID;
     vi.spyOn(console, "error").mockImplementation(vi.fn());
   });
 

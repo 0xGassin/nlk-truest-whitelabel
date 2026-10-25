@@ -102,7 +102,7 @@ export function GitHubIntegrationDialog({ onOpenChange, open }: GitHubIntegratio
     if (!currentOrganization) return;
 
     const confirmed = confirm(
-      `Disconnect ${integration.github_username} from NuLink? This will unlink all repositories and remove scan data for this GitHub connection.`,
+      `Disconnect ${integration.github_username} from Truest? This will unlink all repositories and remove scan data for this GitHub connection.`,
     );
     if (!confirmed) return;
 

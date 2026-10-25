@@ -1,5 +1,5 @@
 /**
- * Nulink Root is the login and seat manager for this product.
+ * The upstream root app is the login and seat manager for this product.
  * A visitor with no session, and a session that has just ended, is sent
  * to the root login screen. After login, the redirect continues through the
  * root handoff back into Exposure.
@@ -12,12 +12,16 @@ import { IS_WHITELABEL_MODE, WHITELABEL_LOGIN_PATH } from "@/config/whitelabel";
 
 import { sendToWhitelabelSignIn } from "./whitelabel";
 
-const ROOT_APP_URL_DEFAULT = "https://app.nulinksec.com";
-const LOCAL_AUTH_MODE_KEY = "nulink.local-auth-mode";
+const LOCAL_AUTH_MODE_KEY = "truest.local-auth-mode";
 
-const configuredRootURL = (process.env.NEXT_PUBLIC_ROOT_URL ?? "").replace(/\/+$/, "");
-
-export const ROOT_APP_URL = configuredRootURL || ROOT_APP_URL_DEFAULT;
+/**
+ * Root SSO has no built-in address. A whitelabel build never uses it, and
+ * hardcoding one would ship the upstream vendor's hostname in the browser
+ * bundle. A non-whitelabel build must set NEXT_PUBLIC_ROOT_URL; without it
+ * isRootSSOEnabled() is false and the app says sign-in is not configured
+ * rather than silently redirecting somewhere unexpected.
+ */
+export const ROOT_APP_URL = (process.env.NEXT_PUBLIC_ROOT_URL ?? "").replace(/\/+$/, "");
 
 export const ROOT_PRODUCT_ID = process.env.NEXT_PUBLIC_ROOT_PRODUCT_ID ?? "easm";
 
@@ -85,7 +89,7 @@ export function sendToRootLogin(): void {
 }
 
 export function sendToRootHome(): void {
-  // A whitelabel user has no nulink-root account to return to, so signing out
+  // A whitelabel user has no upstream account to return to, so signing out
   // lands back on this app's own login page.
   if (IS_WHITELABEL_MODE) {
     globalThis.location.assign(WHITELABEL_LOGIN_PATH);

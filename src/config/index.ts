@@ -1,12 +1,16 @@
 /**
  * API Configuration
  *
- * NEXT_PUBLIC_API_URL should be set to the base API URL without trailing slash.
- * Example: http://localhost:8081 or https://eapi.nulinksec.com
+ * NEXT_PUBLIC_API_URL is the base API URL, without a trailing slash, and is
+ * inlined into the browser bundle. Setting it makes the browser call that
+ * origin directly, so whichever host is named there is visible to anyone
+ * watching the network tab.
+ *
+ * Leaving it unset is the default: requests stay same-origin and next.config
+ * rewrites /api/* to NEXT_PUBLIC_API_PROXY_TARGET server-side, which keeps the
+ * upstream host out of the browser entirely.
  */
-const CURRENT_API_ORIGIN = "https://eapi.nulinksec.com";
-
-export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? CURRENT_API_ORIGIN)
+export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "")
   .replace(/\/api\/v1\/?$/, "")
   .replace(/\/+$/, "");
 

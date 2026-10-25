@@ -89,7 +89,7 @@ describe("apiClient in a root build", () => {
     vi.clearAllMocks();
   });
 
-  it("keeps the cookie session and sends a 401 to nulink-root", async () => {
+  it("keeps the cookie session and sends a 401 to the sign-in screen", async () => {
     const { apiClient } = await loadClient();
 
     await expect(apiClient.get("/api/v1/users/me", respondWith(401))).rejects.toThrow();

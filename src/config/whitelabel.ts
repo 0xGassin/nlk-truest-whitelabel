@@ -2,7 +2,7 @@
  * Whitelabel mode.
  *
  * A whitelabel build is the copy of this client handed to a partner. It does
- * not sign in through nulink-root. Instead this app's own server holds the
+ * not sign in through the partner API. Instead this app's own server holds the
  * partner API key, mints a one-time access code for the partner's client
  * organization, and the browser exchanges that code for a bearer-token
  * Exposure session on the existing /auth/callback route.

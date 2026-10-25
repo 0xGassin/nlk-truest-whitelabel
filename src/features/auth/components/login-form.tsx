@@ -47,7 +47,7 @@ export function LoginForm({ className, local = false, ...props }: React.Componen
     return (
       <div className="flex flex-col items-center gap-3 py-8 text-center">
         <Spinner className="size-5 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Continuing to Nulink…</p>
+        <p className="text-sm text-muted-foreground">Continuing to Truest…</p>
       </div>
     );
   }
@@ -118,7 +118,7 @@ export function LoginForm({ className, local = false, ...props }: React.Componen
       {/* Error Messages */}
       {handoffFailed ? (
         <AlertMessage
-          message="Sign-in from Nulink failed. Ask an organization admin to give you a seat, then try again."
+          message="Sign-in from Truest failed. Ask an organization admin to give you a seat, then try again."
           variant="error"
         />
       ) : null}

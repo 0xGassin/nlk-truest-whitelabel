@@ -13,7 +13,7 @@
  */
 import { WHITELABEL_LOGIN_PATH, WHITELABEL_SESSION_PATH } from "@/config/whitelabel";
 
-const ATTEMPTS_KEY = "nulink.whitelabel-sign-in";
+const ATTEMPTS_KEY = "truest.whitelabel-sign-in";
 const MAX_ATTEMPTS = 2;
 const ATTEMPT_WINDOW_MS = 60_000;
 const CALLBACK_PATH = "/auth/callback";

@@ -12,7 +12,7 @@ import { sendToWhitelabelSignIn } from "@/lib/auth/whitelabel";
  * Shared API client for the exposure-management server.
  *
  * Authentication is handled by the server's HttpOnly cookie. A 401 outside
- * the handoff callback sends the browser back to nulink-root, matching Cloud.
+ * the handoff callback sends the browser back to the sign-in screen.
  *
  * A whitelabel build runs on another site, where the browser drops that
  * cookie, so it sends the bearer token from the callback exchange instead. A

@@ -24,15 +24,16 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   description: "External exposure management platform",
   icons: {
-    apple: [{ sizes: "180x180", type: "image/png", url: "/favicon/apple-touch-icon.png?v=2" }],
+    apple: [{ sizes: "180x180", type: "image/png", url: "/favicon/apple-touch-icon.png?v=3" }],
     icon: [
-      { sizes: "32x32", type: "image/png", url: "/favicon/favicon-32x32.png?v=2" },
-      { sizes: "16x16", type: "image/png", url: "/favicon/favicon-16x16.png?v=2" },
+      { type: "image/svg+xml", url: "/favicon.svg?v=3" },
+      { sizes: "32x32", type: "image/png", url: "/favicon/favicon-32x32.png?v=3" },
+      { sizes: "16x16", type: "image/png", url: "/favicon/favicon-16x16.png?v=3" },
     ],
-    shortcut: "/favicon/favicon.ico?v=2",
+    shortcut: "/favicon/favicon.ico?v=3",
   },
-  manifest: "/favicon/site.webmanifest?v=2",
-  title: "Nulink Exposure Management",
+  manifest: "/favicon/site.webmanifest?v=3",
+  title: "Truest Exposure Management",
 };
 
 export default function RootLayout({

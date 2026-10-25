@@ -13,7 +13,7 @@ interface AuthGuardProps {
 
 /**
  * AuthGuard component to protect routes that require authentication.
- * An unauthenticated visitor is sent to the nulink-root login screen.
+ * An unauthenticated visitor is sent to the sign-in screen.
  */
 export function AuthGuard({ children }: AuthGuardProps) {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -57,7 +57,7 @@ export function useAuth() {
 export function useAuthActions() {
   const { clearAuth } = useAuthStore();
 
-  const returnToNulink = async () => {
+  const returnToHome = async () => {
     try {
       const { authService } = await import("@/features/auth");
       await authService.logout();
@@ -71,6 +71,6 @@ export function useAuthActions() {
   };
 
   return {
-    returnToNulink,
+    returnToHome,
   };
 }

@@ -25,7 +25,7 @@ ARG NODE_ENV=production
 
 # NEXT_PUBLIC_* values are inlined into the browser bundle at build time, so
 # they must be present here and not only at runtime. A whitelabel image built
-# without NEXT_PUBLIC_WHITELABEL_MODE=true still redirects to nulink-root SSO.
+# without NEXT_PUBLIC_WHITELABEL_MODE=true still redirects to the upstream SSO screen.
 ARG NEXT_PUBLIC_WHITELABEL_MODE
 ARG NEXT_PUBLIC_API_URL
 

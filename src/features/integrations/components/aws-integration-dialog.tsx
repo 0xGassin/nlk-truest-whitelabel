@@ -304,7 +304,7 @@ export function AWSIntegrationDialog({ onOpenChange, open }: AWSIntegrationDialo
                           className={cn(fieldInputClassName, "pr-10 font-mono text-[13px]")}
                           id="arn"
                           onChange={handleCloudFormationChange("roleArn")}
-                          placeholder="arn:aws:iam::123456789012:role/NuLinkRole"
+                          placeholder="arn:aws:iam::123456789012:role/TruestRole"
                           required
                           value={cloudFormationCreds.roleArn}
                         />

@@ -35,7 +35,7 @@ import { cn } from "@/lib/utils";
 import { NavMain } from "./nav-main";
 import { NavProjects } from "./nav-projects";
 import { NavUser } from "./nav-user";
-import { NulinkBrand, OrganizationSwitcher } from "./organization-switcher";
+import { OrganizationSwitcher, TruestBrand } from "./organization-switcher";
 
 const isPathActive = (pathname: null | string, targetPath: string) => {
   if (targetPath === "#" || !pathname) return false;
@@ -174,7 +174,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <>
       <SidebarHeader className="h-14 justify-center">
         <div className="flex min-w-0 items-center gap-1">
-          <NulinkBrand />
+          <TruestBrand />
           <span aria-hidden className="shrink-0 text-[13px] text-muted-foreground/60">
             /
           </span>

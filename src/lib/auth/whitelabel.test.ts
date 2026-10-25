@@ -6,7 +6,10 @@ const assign = vi.fn();
 /** Puts the browser on `url` and loads a fresh copy of the module. */
 async function loadAt(url: string) {
   vi.resetModules();
-  vi.stubGlobal("location", { ...new URL(url, "http://localhost"), assign });
+  // URL exposes its parts as prototype getters, so spreading one yields an
+  // empty object and every lookup below would be undefined. Copy explicitly.
+  const { hash, href, origin, pathname, search } = new URL(url, "http://localhost");
+  vi.stubGlobal("location", { assign, hash, href, origin, pathname, search });
   return import("./whitelabel");
 }
 

@@ -5,7 +5,7 @@ import { timingSafeEqual } from "node:crypto";
  * Whitelabel sign-in, server side.
  *
  * The partner API key authenticates the partner (not the end user) against
- * nulink-root's partner API. It must never reach the browser, so the key is
+ * the partner API. It must never reach the browser, so the key is
  * read from a non-NEXT_PUBLIC_ variable and used only here, in the Node
  * runtime. The browser receives a one-time access code and nothing else.
  *
@@ -14,7 +14,7 @@ import { timingSafeEqual } from "node:crypto";
  * it has no valid session (see src/lib/auth/whitelabel.ts). POST checks the
  * demo credentials from the /login form and returns the code as JSON.
  *
- * Sign-in is two calls against nulink-root:
+ * Sign-in is two calls against the partner API:
  *
  *   1. POST /partner/orgs            provision the client organization
  *   2. POST /partner/orgs/{id}/access   mint a one-time code for it
@@ -37,7 +37,6 @@ export const runtime = "nodejs";
 // The access code is single-use and short-lived; never cache this response.
 export const dynamic = "force-dynamic";
 
-const DEFAULT_ROOT_API_URL = "https://rapi.nulinksec.com/api/v1";
 const DEFAULT_CLIENT_NAME = "Truest Demo";
 
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -49,8 +48,13 @@ const REQUEST_TIMEOUT_MS = 10_000;
  */
 let cachedOrgID: null | string = null;
 
+/**
+ * The partner API origin. Deliberately has no built-in default: guessing
+ * wrong would send the partner key to the wrong host, and hardcoding the real
+ * one would put the upstream vendor's address in the shipped source.
+ */
 function rootApiURL(): string {
-  return (process.env.NULINK_ROOT_API_URL ?? DEFAULT_ROOT_API_URL).replace(/\/+$/, "");
+  return (process.env.PARTNER_API_URL ?? "").replace(/\/+$/, "");
 }
 
 /** Compares without leaking length or content through timing. */
@@ -83,28 +87,28 @@ async function partnerFetch(path: string, apiKey: string, body?: unknown): Promi
 /**
  * Returns the client organization to sign the demo user into.
  *
- * Normally this is NULINK_PARTNER_ORG_ID, the id stored when the org was
+ * Normally this is PARTNER_ORG_ID, the id stored when the org was
  * provisioned — the stand-in for the row a real partner keeps against the
  * user. Provisioning only runs as a fallback, and only with an explicit
  * external_id: inventing one could quietly create a second, empty
  * organization rather than reusing the configured one.
  */
 async function resolveOrgID(apiKey: string): Promise<null | string> {
-  const configured = (process.env.NULINK_PARTNER_ORG_ID ?? "").trim();
+  const configured = (process.env.PARTNER_ORG_ID ?? "").trim();
   if (configured) return configured;
   if (cachedOrgID) return cachedOrgID;
 
-  const externalID = (process.env.NULINK_PARTNER_EXTERNAL_ID ?? "").trim();
+  const externalID = (process.env.PARTNER_EXTERNAL_ID ?? "").trim();
   if (!externalID) {
     console.error(
-      "[whitelabel] set NULINK_PARTNER_ORG_ID to the provisioned organization, or NULINK_PARTNER_EXTERNAL_ID to provision it; refusing to guess and risk creating a second organization",
+      "[whitelabel] set PARTNER_ORG_ID to the provisioned organization, or PARTNER_EXTERNAL_ID to provision it; refusing to guess and risk creating a second organization",
     );
     return null;
   }
 
   const response = await partnerFetch("/partner/orgs", apiKey, {
     external_id: externalID,
-    name: process.env.NULINK_PARTNER_CLIENT_NAME ?? DEFAULT_CLIENT_NAME,
+    name: process.env.PARTNER_CLIENT_NAME ?? DEFAULT_CLIENT_NAME,
   });
 
   if (!response.ok) {
@@ -156,7 +160,7 @@ async function mintAccessCode(apiKey: string): Promise<null | string> {
     // A rejected key is a deployment fault, not a bad password: say so once,
     // loudly, instead of leaving the operator guessing.
     if (response.status === 401 || response.status === 403) {
-      console.error("[whitelabel] the partner API rejected NULINK_PARTNER_API_KEY");
+      console.error("[whitelabel] the partner API rejected PARTNER_API_KEY");
     }
     return null;
   }
@@ -177,7 +181,7 @@ async function mintAccessCode(apiKey: string): Promise<null | string> {
 }
 
 export async function GET(request: Request): Promise<NextResponse> {
-  const apiKey = process.env.NULINK_PARTNER_API_KEY ?? "";
+  const apiKey = process.env.PARTNER_API_KEY ?? "";
   const params = new URLSearchParams();
 
   const returnUrl = new URL(request.url).searchParams.get("returnUrl");
@@ -185,11 +189,11 @@ export async function GET(request: Request): Promise<NextResponse> {
     params.set("returnUrl", returnUrl);
   }
 
-  if (apiKey) {
+  if (apiKey && rootApiURL()) {
     const code = await mintAccessCode(apiKey);
     if (code) params.set("code", code);
   } else {
-    console.error("[whitelabel] sign-in is not configured: NULINK_PARTNER_API_KEY is required");
+    console.error("[whitelabel] sign-in is not configured: PARTNER_API_KEY and PARTNER_API_URL are required");
   }
 
   // Without a code the callback shows its sign-in error state.
@@ -204,14 +208,14 @@ export async function GET(request: Request): Promise<NextResponse> {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const apiKey = process.env.NULINK_PARTNER_API_KEY ?? "";
+  const apiKey = process.env.PARTNER_API_KEY ?? "";
   const demoEmail = process.env.WHITELABEL_DEMO_EMAIL ?? "";
   const demoPassword = process.env.WHITELABEL_DEMO_PASSWORD ?? "";
 
-  if (!apiKey || !demoEmail || !demoPassword) {
+  if (!apiKey || !rootApiURL() || !demoEmail || !demoPassword) {
     // Log the cause for the operator; tell the browser only that it is broken.
     console.error(
-      "[whitelabel] sign-in is not configured: NULINK_PARTNER_API_KEY, WHITELABEL_DEMO_EMAIL and WHITELABEL_DEMO_PASSWORD are required",
+      "[whitelabel] sign-in is not configured: PARTNER_API_KEY, PARTNER_API_URL, WHITELABEL_DEMO_EMAIL and WHITELABEL_DEMO_PASSWORD are required",
     );
     return json({ error: "Sign-in is not configured." }, 503);
   }

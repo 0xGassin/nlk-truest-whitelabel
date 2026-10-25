@@ -36,7 +36,7 @@ function capitalize(str: string): string {
 export function NavUser() {
   const { isMobile } = useSidebar();
   const { user } = useAuth();
-  const { returnToNulink } = useAuthActions();
+  const { returnToHome } = useAuthActions();
   const { highContrastPopups } = useTheme();
   const popup = getSidebarPopupClasses(highContrastPopups);
 
@@ -134,7 +134,7 @@ export function NavUser() {
               <DropdownMenuItem
                 className={cn(popup.item)}
                 onClick={() => {
-                  void returnToNulink();
+                  void returnToHome();
                 }}
               >
                 <LogOut />

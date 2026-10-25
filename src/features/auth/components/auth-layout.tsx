@@ -4,6 +4,7 @@ import { Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { BrandWordmark } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 
 interface AuthLayoutProps {
@@ -19,7 +20,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           {/* Header */}
           <div className="flex items-center justify-between">
             <Link className="flex items-center gap-2" href="/">
-              <Image alt="NuLink" className="h-6 w-auto" height={24} src="/Logo_Dark.png" width={96} />
+              <BrandWordmark className="h-6 w-auto" priority />
             </Link>
             <Button aria-label="Menu" className="lg:hidden" size="icon-sm" variant="ghost">
               <Menu className="size-5" />

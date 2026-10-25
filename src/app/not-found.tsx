@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 
+import { BrandIcon } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
@@ -8,13 +8,9 @@ export default function NotFound() {
     <main className="flex min-h-screen w-full flex-col items-center justify-center bg-background px-6 text-center text-foreground">
       <div aria-label="404" className="flex items-center gap-[clamp(1rem,3vw,2.5rem)]" role="img">
         <span className="font-sans text-[clamp(8rem,24vw,16rem)] leading-none font-medium tracking-[-0.12em]">4</span>
-        <Image
-          alt="NuLink"
-          className="size-[clamp(7rem,18vw,12rem)] object-contain motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-500 motion-reduce:animate-none dark:invert"
-          height={151}
+        <BrandIcon
+          className="size-[clamp(7rem,18vw,12rem)] rounded-[22%] object-contain motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-500 motion-reduce:animate-none"
           priority
-          src="/icons/Vector.svg"
-          width={146}
         />
         <span className="-translate-x-1 font-sans text-[clamp(8rem,24vw,16rem)] leading-none font-medium tracking-[-0.12em]">
           4

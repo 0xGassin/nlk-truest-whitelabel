@@ -142,7 +142,7 @@ export function LinearIntegrationDialog({ onOpenChange, open }: LinearIntegratio
         {isConnected ? (
           <>
             <IntegrationStepIntro>
-              Select the Linear team that should receive vulnerabilities from NuLink.
+              Select the Linear team that should receive vulnerabilities from Truest.
             </IntegrationStepIntro>
             <div className="overflow-hidden rounded-lg border border-[#eaeaea] dark:border-border">
               {teams.map((team, index) => (

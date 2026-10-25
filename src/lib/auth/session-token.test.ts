@@ -25,7 +25,7 @@ describe("session token", () => {
   });
 
   it("treats a malformed entry as absent", () => {
-    sessionStorage.setItem("nulink.session-token", "not json");
+    sessionStorage.setItem("truest.session-token", "not json");
     expect(getSessionToken()).toBeNull();
   });
 });

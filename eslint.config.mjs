@@ -258,14 +258,14 @@ export default tseslint.config(
 
   // ── Next.js ─────────────────────────────────────────────────────
   {
-    name: "nulink/next",
+    name: "truest/next",
     plugins: { "@next/next": nextPlugin },
     rules: nextPlugin.configs["core-web-vitals"].rules,
   },
 
   // ── Everything else ─────────────────────────────────────────────
   {
-    name: "nulink/main",
+    name: "truest/main",
     files: ["src/**/*.{ts,tsx}"],
 
     languageOptions: {
@@ -323,7 +323,7 @@ export default tseslint.config(
 
   // ── Overrides ───────────────────────────────────────────────────
   {
-    name: "nulink/overrides/test",
+    name: "truest/overrides/test",
     files: ["src/**/*.{test,spec}.{ts,tsx}", "src/__tests__/**/*.{ts,tsx}"],
     rules: {
       "import/no-extraneous-dependencies": "off",
@@ -336,7 +336,7 @@ export default tseslint.config(
     },
   },
   {
-    name: "nulink/overrides/ui",
+    name: "truest/overrides/ui",
     files: ["src/components/ui/**/*.{ts,tsx}"],
     rules: {
       "react-refresh/only-export-components": "off",
@@ -345,7 +345,7 @@ export default tseslint.config(
     },
   },
   {
-    name: "nulink/overrides/app-router",
+    name: "truest/overrides/app-router",
     files: ["src/app/**/*.{ts,tsx}"],
     rules: {
       "import/no-default-export": "off",
@@ -355,7 +355,7 @@ export default tseslint.config(
     },
   },
   {
-    name: "nulink/overrides/config",
+    name: "truest/overrides/config",
     files: ["*.config.{ts,js,mjs}"],
     rules: {
       "import/no-default-export": "off",

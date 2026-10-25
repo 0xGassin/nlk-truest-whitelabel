@@ -185,7 +185,7 @@ export function SlackIntegrationDialog({ onOpenChange, open }: SlackIntegrationD
   const handleDisconnect = async () => {
     if (!orgId) return;
     const confirmed = confirm(
-      "Disconnect Slack from NuLink? You will stop receiving security alerts until you reconnect.",
+      "Disconnect Slack from Truest? You will stop receiving security alerts until you reconnect.",
     );
     if (!confirmed) return;
 

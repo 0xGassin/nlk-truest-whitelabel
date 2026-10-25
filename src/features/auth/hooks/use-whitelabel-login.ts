@@ -36,7 +36,7 @@ function safeReturnUrl(): null | string {
  *
  * The form posts to this app's own server, which checks the credentials and
  * mints a one-time access code through the partner API. The code is then
- * handed to /auth/callback, the same route nulink-root's handoff uses, which
+ * handed to /auth/callback, the same route the partner API's handoff uses, which
  * exchanges it for a bearer token. This app runs on a different site from the
  * API, where the API's session cookie would be dropped, so every API call
  * after that carries the token instead, against the existing routes.

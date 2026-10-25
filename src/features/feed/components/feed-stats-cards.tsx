@@ -128,7 +128,7 @@ export function FeedStatsCards({
           </div>
 
           <div className="border-t bg-muted/50 p-4 text-xs leading-relaxed text-muted-foreground">
-            Nulink groups issues developers usually fix together. For example, CVEs in the same package count as one
+            Truest groups issues developers usually fix together. For example, CVEs in the same package count as one
             group.
           </div>
         </HoverCardContent>

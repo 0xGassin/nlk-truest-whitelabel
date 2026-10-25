@@ -34,7 +34,7 @@ export function cn(...inputs: ClassValue[]) {
  * @example
  * ```typescript
  * const avatarUrl = getIdenticonUrl('user@example.com');
- * // Returns: "https://api.nulinksec.com/api/v1/auth/identicon?email=user%40example.com"
+ * // Returns: "https://api.example.com/api/v1/auth/identicon?email=user%40example.com"
  * ```
  */
 export function getIdenticonUrl(input: string) {
