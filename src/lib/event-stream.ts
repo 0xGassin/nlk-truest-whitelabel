@@ -9,7 +9,8 @@ export async function readEventStream(
   body: ReadableStream<Uint8Array>,
   onData: (data: string) => void,
 ): Promise<void> {
-  const reader = body.pipeThrough(new TextDecoderStream()).getReader();
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
   let buffer = "";
   let data: string[] = [];
 
@@ -17,7 +18,7 @@ export async function readEventStream(
     const { done, value } = await reader.read();
     if (done) return;
 
-    buffer += value;
+    buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split(/\r?\n/);
     buffer = lines.pop() ?? "";
 

@@ -182,3 +182,54 @@ describe("whitelabel sign-in route", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+describe("automatic whitelabel sign-in route", () => {
+  beforeEach(() => {
+    process.env.NULINK_PARTNER_API_KEY = "nlk_test_key";
+    process.env.NULINK_ROOT_API_URL = "https://rapi.example.com/api/v1";
+    process.env.NULINK_PARTNER_ORG_ID = ORG_ID;
+    vi.spyOn(console, "error").mockImplementation(vi.fn());
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function get(query = ""): Request {
+    return new Request(`http://localhost/whitelabel/session${query}`);
+  }
+
+  it("mints a code and redirects to the callback with the return path", async () => {
+    vi.stubGlobal("fetch", partnerAPI().fetchMock);
+
+    const { GET } = await loadRoute();
+    const response = await GET(get(`?returnUrl=${encodeURIComponent("/issues?tab=open")}`));
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("Location")).toBe(
+      `/auth/callback?returnUrl=${encodeURIComponent("/issues?tab=open")}&code=one-time-code`,
+    );
+  });
+
+  it("drops a return path that leaves the site", async () => {
+    vi.stubGlobal("fetch", partnerAPI().fetchMock);
+
+    const { GET } = await loadRoute();
+    const response = await GET(get("?returnUrl=//evil.com"));
+
+    expect(response.headers.get("Location")).toBe("/auth/callback?code=one-time-code");
+  });
+
+  it("redirects to the callback error state when no code can be minted", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(Response.json({ detail: "bad key" }, { status: 401 }))),
+    );
+
+    const { GET } = await loadRoute();
+    const response = await GET(get());
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("Location")).toBe("/auth/callback?error=signin");
+  });
+});

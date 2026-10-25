@@ -5,9 +5,10 @@ import { AxiosError, AxiosHeaders } from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const sendToRootLogin = vi.fn();
-const sendToWhitelabelLogin = vi.fn();
+const sendToWhitelabelSignIn = vi.fn();
 
-vi.mock("@/lib/auth/root", () => ({ sendToRootLogin, sendToWhitelabelLogin }));
+vi.mock("@/lib/auth/root", () => ({ sendToRootLogin }));
+vi.mock("@/lib/auth/whitelabel", () => ({ sendToWhitelabelSignIn }));
 
 const inAnHour = () => new Date(Date.now() + 3_600_000).toISOString();
 
@@ -63,14 +64,14 @@ describe("apiClient in a whitelabel build", () => {
     expect(seen[0]?.has("Authorization")).toBe(false);
   });
 
-  it("drops the token and restarts whitelabel sign-in on a 401", async () => {
+  it("drops the token and signs in again on a 401", async () => {
     const { apiClient, getSessionToken, setSessionToken } = await loadClient();
     setSessionToken("jwt", inAnHour());
 
     await expect(apiClient.get("/api/v1/users/me", respondWith(401))).rejects.toThrow();
 
     expect(getSessionToken()).toBeNull();
-    expect(sendToWhitelabelLogin).toHaveBeenCalledOnce();
+    expect(sendToWhitelabelSignIn).toHaveBeenCalledOnce();
     expect(sendToRootLogin).not.toHaveBeenCalled();
   });
 
@@ -79,7 +80,7 @@ describe("apiClient in a whitelabel build", () => {
 
     await expect(apiClient.post("/api/v1/auth/callback", {}, respondWith(401))).rejects.toThrow();
 
-    expect(sendToWhitelabelLogin).not.toHaveBeenCalled();
+    expect(sendToWhitelabelSignIn).not.toHaveBeenCalled();
   });
 });
 
@@ -95,6 +96,6 @@ describe("apiClient in a root build", () => {
 
     expect(apiClient.defaults.withCredentials).toBe(true);
     expect(sendToRootLogin).toHaveBeenCalledOnce();
-    expect(sendToWhitelabelLogin).not.toHaveBeenCalled();
+    expect(sendToWhitelabelSignIn).not.toHaveBeenCalled();
   });
 });
