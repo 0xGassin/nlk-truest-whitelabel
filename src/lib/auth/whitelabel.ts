@@ -49,6 +49,11 @@ function returnUrl(): null | string {
 export function sendToWhitelabelSignIn(): boolean {
   if (redirecting) return true;
 
+  // Already on the sign-in form. The visitor is being asked for credentials,
+  // and the page still loads its profile, so a background 401 must not bounce
+  // them off the form and straight back to it.
+  if (globalThis.location.pathname === WHITELABEL_LOGIN_PATH) return false;
+
   const params = new URLSearchParams();
   const destination = returnUrl();
   if (destination) params.set("returnUrl", destination);

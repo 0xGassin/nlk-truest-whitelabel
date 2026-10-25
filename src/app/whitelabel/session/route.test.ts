@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -15,6 +16,28 @@ function post(body: unknown): Request {
     headers: { "Content-Type": "application/json" },
     method: "POST",
   });
+}
+
+function sessionGet(cookie?: string): Request {
+  return new Request("http://localhost/whitelabel/session?returnUrl=%2Fdashboard", {
+    headers: cookie ? { cookie } : {},
+    method: "GET",
+  });
+}
+
+/** The Set-Cookie value POST hands back after a successful sign-in. */
+function proofCookieFrom(response: Response): string {
+  return header.split(";", 1)[0] ?? "";
+}
+
+/**
+ * A sign-in cookie the route will accept, so GET can be exercised as an
+ * already-authenticated visitor without posting the form first.
+ */
+function signedInCookie(key = "nlk_test_key", ttlMs = 60_000): string {
+  const expiresAt = Date.now() + ttlMs;
+  const mac = createHmac("sha256", key).update(String(expiresAt)).digest("base64url");
+  return `truest.sign-in=${String(expiresAt)}.${mac}`;
 }
 
 const CREDENTIALS = { email: "demo@truest.ae", password: "truest-demo-2026" };
@@ -139,6 +162,59 @@ describe("whitelabel sign-in route", () => {
     expect(calls).toHaveLength(0);
   });
 
+  it("does not sign an anonymous visitor in, and sends them to the form", async () => {
+    const { calls, fetchMock } = partnerAPI();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { GET } = await loadRoute();
+    const response = await GET(sessionGet());
+
+    // Minting a code here would be handing out a session to anyone who asks.
+    expect(calls).toHaveLength(0);
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toBe("/login?returnUrl=%2Fdashboard");
+    expect(response.headers.get("location")).not.toContain("code=");
+  });
+
+  it("refuses a forged sign-in cookie", async () => {
+    const { calls, fetchMock } = partnerAPI();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { GET } = await loadRoute();
+    const forged = `truest.sign-in=${String(Date.now() + 60_000)}.not-a-real-signature`;
+    const response = await GET(sessionGet(forged));
+
+    expect(calls).toHaveLength(0);
+    expect(response.headers.get("location")).toBe("/login?returnUrl=%2Fdashboard");
+  });
+
+  it("signs in again without the form once the credentials have been checked", async () => {
+    const { fetchMock } = partnerAPI();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { GET, POST } = await loadRoute();
+    const signedIn = await POST(post(CREDENTIALS));
+    const cookie = proofCookieFrom(signedIn);
+
+    expect(cookie).toContain("truest.sign-in=");
+
+    const response = await GET(sessionGet(cookie));
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toContain("code=one-time-code");
+    expect(response.headers.get("location")).toContain("returnUrl=%2Fdashboard");
+  });
+
+  it("does not hand out a sign-in cookie when the credentials are wrong", async () => {
+    const { fetchMock } = partnerAPI();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { POST } = await loadRoute();
+    const response = await POST(post({ ...CREDENTIALS, password: "nope" }));
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
   it("rejects wrong credentials without calling the partner API", async () => {
     const { fetchMock } = partnerAPI();
     vi.stubGlobal("fetch", fetchMock);
@@ -195,8 +271,11 @@ describe("automatic whitelabel sign-in route", () => {
     vi.restoreAllMocks();
   });
 
+  /** Already signed in, so GET exercises the mint path rather than the gate. */
   function get(query = ""): Request {
-    return new Request(`http://localhost/whitelabel/session${query}`);
+    return new Request(`http://localhost/whitelabel/session${query}`, {
+      headers: { cookie: signedInCookie() },
+    });
   }
 
   it("mints a code and redirects to the callback with the return path", async () => {

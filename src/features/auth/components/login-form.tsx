@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IS_WHITELABEL_MODE } from "@/config/whitelabel";
 import { enableLocalAuthMode, isRootSSOEnabled, sendToRootLogin } from "@/lib/auth/root";
+import { resetWhitelabelSignIn } from "@/lib/auth/whitelabel";
 import { cn } from "@/lib/utils";
 
 import { useLogin } from "../hooks/use-login";
@@ -33,6 +34,10 @@ export function LoginForm({ className, local = false, ...props }: React.Componen
   const ssoEnabled = isRootSSOEnabled();
 
   useEffect(() => {
+    // Reaching the form is a clean state: forget earlier automatic attempts so
+    // being sent here does not count against the retry limit.
+    if (IS_WHITELABEL_MODE) resetWhitelabelSignIn();
+
     if (allowLocal) {
       enableLocalAuthMode();
       return;

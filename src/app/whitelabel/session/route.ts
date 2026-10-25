@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+import { WHITELABEL_LOGIN_PATH } from "@/config/whitelabel";
 
 /**
  * Whitelabel sign-in, server side.
@@ -9,10 +11,14 @@ import { timingSafeEqual } from "node:crypto";
  * read from a non-NEXT_PUBLIC_ variable and used only here, in the Node
  * runtime. The browser receives a one-time access code and nothing else.
  *
- * GET signs the visitor in without a form: it mints a code and redirects to
- * /auth/callback, carrying returnUrl along. The browser lands here whenever
- * it has no valid session (see src/lib/auth/whitelabel.ts). POST checks the
- * demo credentials from the /login form and returns the code as JSON.
+ * POST checks the demo credentials from the /login form and, on success,
+ * sets the sign-in cookie below before returning a code.
+ *
+ * GET re-signs the visitor in without a form, for when the Exposure session
+ * expires but the visitor has already proved who they are. It mints a code
+ * only when that cookie is present and valid; otherwise it sends them to
+ * /login. Minting a code is equivalent to handing out a session, so this
+ * endpoint must never do it for an anonymous caller.
  *
  * Sign-in is two calls against the partner API:
  *
@@ -67,6 +73,68 @@ function safeEqual(a: string, b: string): boolean {
 
 function json(body: Record<string, unknown>, status: number): NextResponse {
   return NextResponse.json(body, { headers: { "Cache-Control": "no-store" }, status });
+}
+
+/**
+ * A relative Location keeps the redirect on whatever origin the browser used,
+ * which request.url may not reflect behind a proxy.
+ */
+function redirectTo(location: string): NextResponse {
+  return new NextResponse(null, {
+    headers: { "Cache-Control": "no-store", Location: location },
+    status: 303,
+  });
+}
+
+/**
+ * Proof that this browser passed the credential check.
+ *
+ * Signed with the partner key, which is a server secret of at least 32
+ * characters, so the cookie cannot be forged without it. The expiry is inside
+ * the signed payload, so it cannot be extended by editing the cookie either.
+ * Stateless on purpose: it keeps working across restarts and instances.
+ */
+const SIGN_IN_COOKIE = "truest.sign-in";
+const SIGN_IN_TTL_MS = 8 * 60 * 60 * 1000;
+
+function signProof(expiresAt: number, key: string): string {
+  const mac = createHmac("sha256", key).update(String(expiresAt)).digest("base64url");
+  return `${String(expiresAt)}.${mac}`;
+}
+
+function readCookie(request: Request, name: string): string {
+  const header = request.headers.get("cookie") ?? "";
+  for (const part of header.split(";")) {
+    const [rawName, ...rest] = part.trim().split("=");
+    if (rawName === name) return rest.join("=");
+  }
+  return "";
+}
+
+/** True only for a cookie this server signed, which has not yet expired. */
+function hasValidProof(request: Request, key: string): boolean {
+  const [rawExpiry, mac] = readCookie(request, SIGN_IN_COOKIE).split(".");
+  if (!rawExpiry || !mac) return false;
+
+  const expiresAt = Number(rawExpiry);
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) return false;
+
+  const expected = createHmac("sha256", key).update(rawExpiry).digest("base64url");
+  return safeEqual(mac, expected);
+}
+
+function attachProof(response: NextResponse, key: string): NextResponse {
+  const expiresAt = Date.now() + SIGN_IN_TTL_MS;
+  response.cookies.set({
+    httpOnly: true,
+    maxAge: Math.floor(SIGN_IN_TTL_MS / 1000),
+    name: SIGN_IN_COOKIE,
+    path: "/",
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    value: signProof(expiresAt, key),
+  });
+  return response;
 }
 
 /** One call to the partner API, authenticated with the partner key. */
@@ -189,22 +257,25 @@ export async function GET(request: Request): Promise<NextResponse> {
     params.set("returnUrl", returnUrl);
   }
 
-  if (apiKey && rootApiURL()) {
-    const code = await mintAccessCode(apiKey);
-    if (code) params.set("code", code);
-  } else {
+  if (!apiKey || !rootApiURL()) {
     console.error("[whitelabel] sign-in is not configured: PARTNER_API_KEY and PARTNER_API_URL are required");
+    params.set("error", "signin");
+    return redirectTo(`/auth/callback?${params.toString()}`);
   }
+
+  // Minting a code hands out a session for the client organization, so an
+  // anonymous caller is sent to sign in rather than straight through.
+  if (!hasValidProof(request, apiKey)) {
+    return redirectTo(`${WHITELABEL_LOGIN_PATH}?${params.toString()}`);
+  }
+
+  const code = await mintAccessCode(apiKey);
+  if (code) params.set("code", code);
 
   // Without a code the callback shows its sign-in error state.
   if (!params.has("code")) params.set("error", "signin");
 
-  // A relative Location keeps the redirect on whatever origin the browser
-  // used, which request.url may not reflect behind a proxy.
-  return new NextResponse(null, {
-    headers: { "Cache-Control": "no-store", Location: `/auth/callback?${params.toString()}` },
-    status: 303,
-  });
+  return redirectTo(`/auth/callback?${params.toString()}`);
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -244,5 +315,8 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (!code) {
     return json({ error: "Sign-in is temporarily unavailable. Please try again." }, 502);
   }
-  return json({ code }, 200);
+
+  // The credentials checked out, so let GET re-mint a code for this browser
+  // later without putting the form in front of the visitor again.
+  return attachProof(json({ code }, 200), apiKey);
 }
