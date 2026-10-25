@@ -2,7 +2,7 @@
 
 import { ChevronsUpDown } from "lucide-react";
 
-import { BrandWordmark } from "@/components/brand";
+import { BrandIcon, BrandWordmark } from "@/components/brand";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +20,7 @@ export function TruestBrand() {
   return (
     <div className="flex h-[30px] items-center px-1.5">
       <span className="relative flex h-[30px] shrink-0 items-center">
-        <BrandWordmark className="h-[22px] w-auto" />
+        <BrandIcon className="h-[22px] w-auto" />
       </span>
     </div>
   );
