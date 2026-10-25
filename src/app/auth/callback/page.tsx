@@ -1,7 +1,9 @@
 "use client";
 
+import type { AuthResponse } from "@/types";
+
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import { UniversalLoader } from "@/components/ui/universal-loader";
 import { IS_WHITELABEL_MODE } from "@/config/whitelabel";
@@ -12,12 +14,31 @@ import { logger } from "@/lib/logger";
 import { userService } from "@/services/api";
 import { useAuthStore } from "@/stores/auth-store";
 
+/**
+ * One exchange per code, shared across remounts.
+ *
+ * A handoff code is single-use: nulink-root deletes the row as it redeems it,
+ * so a second attempt with the same code always comes back 401. React Strict
+ * Mode, Fast Refresh and a manual reload all remount this component, so the
+ * request is kept here, outside the component, and every mount awaits the one
+ * promise instead of starting a new exchange.
+ */
+const exchanges = new Map<string, Promise<AuthResponse>>();
+
+function exchangeOnce(code: string): Promise<AuthResponse> {
+  const pending = exchanges.get(code);
+  if (pending) return pending;
+
+  const started = exchangeHandoff(code);
+  exchanges.set(code, started);
+  return started;
+}
+
 function HandoffCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setAuthWithOrganization = useAuthStore((state) => state.setAuthWithOrganization);
   const [error, setError] = useState<null | string>(null);
-  const started = useRef(false);
   const code = searchParams.get("code")?.trim() ?? "";
   const signInUnavailable = !code && !isSignInConfigured();
 
@@ -28,24 +49,28 @@ function HandoffCallback() {
       }
       return;
     }
-    if (started.current) return;
-    started.current = true;
 
-    const gate: { cancelled: boolean } = { cancelled: false };
+    const mount: { active: boolean } = { active: true };
+
+    // Read the destination, then drop the code from the address bar before
+    // the exchange. The code and the returnUrl share one search string, and a
+    // reload that still carried a spent code could only ever fail.
+    const destination = getReturnUrl();
+    globalThis.history.replaceState(null, "", "/auth/callback");
+
     void (async () => {
       try {
-        const response = await exchangeHandoff(code);
+        const response = await exchangeOnce(code);
         const user = await userService.getProfile().catch(() => response.user);
-        if (gate.cancelled) return;
         await setAuthWithOrganization(user);
-        // Read the destination before clearing the query, since the one-time
-        // code and the returnUrl live in the same search string.
-        const destination = getReturnUrl();
-        globalThis.history.replaceState(null, "", "/auth/callback");
+        // Navigate even when this mount has already been torn down. Strict
+        // Mode discards the first mount immediately, and by this point the
+        // session is live, so stranding the user on the loader is the worse
+        // outcome.
         router.replace(destination);
       } catch (error_) {
         logger.error("Handoff exchange failed", { error: error_ });
-        if (gate.cancelled) return;
+        if (!mount.active) return;
         setError(
           IS_WHITELABEL_MODE
             ? "This sign-in link has expired or is no longer valid. Please sign in again."
@@ -55,7 +80,7 @@ function HandoffCallback() {
     })();
 
     return () => {
-      gate.cancelled = true;
+      active = false;
     };
   }, [code, router, setAuthWithOrganization]);
 
