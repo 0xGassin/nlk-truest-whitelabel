@@ -1,0 +1,191 @@
+.react-flow__background path {
+  stroke: color-mix(in oklab, var(--border) 60%, var(--background));
+}
+
+.react-flow__background pattern circle {
+  fill: color-mix(in oklab, var(--border) 60%, var(--background));
+}
+
+.dark .react-flow__background path {
+  stroke: color-mix(in oklab, var(--border) 48%, var(--background));
+}
+
+.dark .react-flow__background pattern circle {
+  fill: color-mix(in oklab, var(--border) 48%, var(--background));
+}
+
+.react-flow__node > div {
+  animation: rf-node-in 320ms ease both;
+}
+
+.dark .react-flow__node > div {
+  filter: saturate(0.93);
+}
+
+@keyframes rf-node-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.react-flow__edge {
+  animation: rf-edge-in 420ms ease both;
+}
+
+.dark .react-flow__edge {
+  opacity: 0.82;
+}
+
+@keyframes rf-edge-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.react-flow {
+  --graph-minimap-height: 96px;
+  --graph-minimap-width: 144px;
+  --graph-panel-gap: 12px;
+  --graph-panel-offset: 12px;
+  container-name: graph-canvas;
+  container-type: inline-size;
+}
+
+.react-flow__controls {
+  bottom: var(--graph-panel-offset);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: var(--graph-minimap-height);
+  width: 28px;
+  overflow: visible;
+  padding: 0;
+  box-shadow: none;
+}
+
+.react-flow__controls.graph-controls {
+  bottom: var(--graph-panel-offset);
+  right: calc(var(--graph-minimap-width) + var(--graph-panel-gap) + var(--graph-panel-offset));
+  margin: 0;
+}
+
+.react-flow__controls-button {
+  box-sizing: border-box;
+  flex: 1 1 0;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--background) !important;
+  box-shadow: none;
+  color: var(--muted-foreground) !important;
+  padding: 0;
+}
+
+.react-flow__controls-button:first-child {
+  border-radius: 4px 4px 0 0;
+}
+
+.react-flow__controls-button:not(:first-child) {
+  border-top-width: 0;
+}
+
+.react-flow__controls-button:last-child {
+  border-radius: 0 0 4px 4px;
+}
+
+.react-flow__controls-button svg {
+  max-width: 10px;
+  max-height: 10px;
+}
+
+.react-flow__controls-button svg path {
+  fill: currentColor;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+.react-flow .react-flow__minimap {
+  right: var(--graph-panel-offset);
+  bottom: var(--graph-panel-offset);
+  width: var(--graph-minimap-width);
+  height: var(--graph-minimap-height);
+  margin: 0;
+}
+
+.react-flow .react-flow__minimap svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Keep the minimap and its controls within narrow graph containers. */
+@container graph-canvas (max-width: 520px) {
+  .react-flow__controls.graph-controls {
+    right: 140px;
+    height: 80px;
+  }
+
+  .react-flow .react-flow__minimap {
+    width: 116px;
+    height: 80px;
+  }
+}
+
+@container graph-canvas (max-width: 360px) {
+  .react-flow__controls.graph-controls {
+    right: 112px;
+    height: 64px;
+    width: 24px;
+  }
+
+  .react-flow .react-flow__minimap {
+    width: 88px;
+    height: 64px;
+  }
+}
+
+.react-flow .react-flow__minimap {
+  border: 1px solid color-mix(in oklab, var(--border) 78%, var(--background));
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.05);
+  background-color: var(--card) !important;
+  overflow: hidden;
+}
+
+.react-flow__minimap-node {
+  fill: var(--foreground);
+  opacity: 0.35;
+}
+
+.dark .react-flow__minimap-node {
+  opacity: 0.28;
+}
+
+.react-flow__minimap-mask {
+  fill: var(--background);
+  opacity: 0.6;
+}
+
+.dark .react-flow__minimap-mask {
+  opacity: 0.52;
+}
+
+.react-flow__edge-text text {
+  fill: var(--muted-foreground);
+}
+
+.react-flow__edge-textbg {
+  fill: var(--card) !important;
+}

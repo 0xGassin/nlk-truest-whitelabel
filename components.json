@@ -1,0 +1,32 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/app/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "registries": {
+    "@aliimam": "https://aliimam.in/r/{name}.json",
+    "@svgl": "https://svgl.app/r/{name}.json",
+    "@unlumen-ui": "https://ui.unlumen.com/r/{name}.json",
+    "@reui": "https://reui.io/r/{style}/{name}.json",
+    "@assistant-ui": "https://r.assistant-ui.com/{name}.json",
+    "@data-table-filters": "https://data-table.openstatus.dev/r/{name}.json",
+    "@magicui": "https://magicui.design/r/{name}",
+    "@flagcn": "https://flagcn.dev/r/{name}.json",
+    "@evilcharts": "https://evilcharts.com/r/{name}.json"
+  }
+}

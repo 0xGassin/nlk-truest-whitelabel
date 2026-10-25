@@ -1,0 +1,211 @@
+"use client";
+
+import type { ComponentProps } from "react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  type BarProps,
+  Line,
+  LineChart,
+  type LineProps,
+  ResponsiveContainer,
+  Tooltip,
+  type TooltipContentProps,
+} from "recharts";
+import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
+
+type AreaProps = ComponentProps<typeof Area>;
+
+export type ValueFormatter = (value: number) => string;
+
+const ChartTooltipContent = ({
+  payload,
+  formatter,
+  valueFormatter,
+}: TooltipContentProps<ValueType, NameType> & { valueFormatter?: ValueFormatter }) => {
+  if (!payload || payload.length === 0) return null;
+
+  return (
+    <div className="bg-popover text-popover-foreground grid min-w-32 items-start gap-1.5 rounded-md px-2.5 py-1.5 text-xs shadow-md ring-1 ring-foreground/10">
+      <span className="font-medium">{payload?.[0].payload.label}</span>
+
+      {payload.map((item, index) => {
+        const itemColor =
+          (item.color as string | undefined) ?? (item.fill as string | undefined) ?? "var(--color-foreground)";
+
+        return (
+          <div
+            key={typeof item.dataKey === "string" || typeof item.dataKey === "number" ? item.dataKey : index}
+            className="flex items-center gap-1.5"
+          >
+            <div className="size-2.5 shrink-0 rounded-[2px]" style={{ backgroundColor: itemColor }} />
+            {payload.length > 1 && item.name !== undefined && (
+              <span className="text-muted-foreground">{item.name}</span>
+            )}
+            <span className="ml-auto font-medium tabular-nums">
+              {valueFormatter
+                ? valueFormatter(Number(item.value))
+                : formatter
+                  ? formatter(item.value, item.name, item, index, payload)
+                  : item.value}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export interface TinyBarChartProps {
+  /**
+   * Turn off inside a `role='img'` wrapper, such as `KPIChart`: its children are
+   * hidden from assistive tech, so the chart's keyboard layer would be a tab stop
+   * that a screen reader announces as nothing.
+   */
+  accessibilityLayer?: boolean;
+  bars: BarProps[];
+  className?: string;
+  data: unknown[];
+  formatter?: ValueFormatter;
+  height?: number;
+}
+
+export const TinyBarChart = ({
+  accessibilityLayer = true,
+  bars,
+  className = "",
+  data,
+  formatter,
+  height = 180,
+}: TinyBarChartProps) => {
+  const safeData = Array.isArray(data) ? data : [];
+  const resolvedBars = Array.isArray(bars) && bars.length > 0 ? bars : [];
+
+  return (
+    <div className={`w-full ${className}`} style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart accessibilityLayer={accessibilityLayer} data={safeData}>
+          <Tooltip
+            content={(props) => <ChartTooltipContent {...props} valueFormatter={formatter} />}
+            cursor={{ fill: "var(--color-muted)" }}
+            isAnimationActive={false}
+          />
+          {resolvedBars.map((barProps, index) => {
+            const dataKey =
+              typeof barProps.dataKey === "string" || typeof barProps.dataKey === "number" ? barProps.dataKey : index;
+
+            return <Bar key={String(dataKey)} radius={barProps.radius ?? [4, 4, 0, 0]} {...barProps} />;
+          })}
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
+export interface TinyLineChartProps {
+  /**
+   * Turn off inside a `role='img'` wrapper, such as `KPIChart`: its children are
+   * hidden from assistive tech, so the chart's keyboard layer would be a tab stop
+   * that a screen reader announces as nothing.
+   */
+  accessibilityLayer?: boolean;
+  className?: string;
+  data: unknown[];
+  formatter?: ValueFormatter;
+  height?: number;
+  lines: LineProps[];
+}
+
+export const TinyLineChart = ({
+  accessibilityLayer = true,
+  className = "",
+  data,
+  formatter,
+  height = 180,
+  lines,
+}: TinyLineChartProps) => {
+  const safeData = Array.isArray(data) ? data : [];
+  const resolvedLines = Array.isArray(lines) && lines.length > 0 ? lines : [];
+
+  return (
+    <div className={`w-full ${className}`} style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart accessibilityLayer={accessibilityLayer} data={safeData}>
+          <Tooltip
+            content={(props) => <ChartTooltipContent {...props} valueFormatter={formatter} />}
+            cursor={{ stroke: "var(--color-border)" }}
+            isAnimationActive={false}
+          />
+          {resolvedLines.map((lineProps, index) => {
+            const dataKey =
+              typeof lineProps.dataKey === "string" || typeof lineProps.dataKey === "number"
+                ? lineProps.dataKey
+                : index;
+
+            return (
+              <Line
+                key={String(dataKey)}
+                type={lineProps.type ?? "monotone"}
+                strokeWidth={lineProps.strokeWidth ?? 2}
+                dot={lineProps.dot ?? { r: 4 }}
+                {...lineProps}
+              />
+            );
+          })}
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
+export interface TinyAreaChartProps {
+  /**
+   * Turn off inside a `role='img'` wrapper, such as `KPIChart`: its children are
+   * hidden from assistive tech, so the chart's keyboard layer would be a tab stop
+   * that a screen reader announces as nothing.
+   */
+  accessibilityLayer?: boolean;
+  areas: AreaProps[];
+  className?: string;
+  data: unknown[];
+  formatter?: ValueFormatter;
+  height?: number;
+}
+
+export const TinyAreaChart = ({
+  accessibilityLayer = true,
+  areas,
+  className = "",
+  data,
+  formatter,
+  height = 180,
+}: TinyAreaChartProps) => {
+  const safeData = Array.isArray(data) ? data : [];
+  const resolvedAreas = Array.isArray(areas) && areas.length > 0 ? areas : [];
+
+  return (
+    <div className={`w-full ${className}`} style={{ height }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart accessibilityLayer={accessibilityLayer} data={safeData}>
+          <Tooltip
+            content={(props) => <ChartTooltipContent {...props} valueFormatter={formatter} />}
+            cursor={{ stroke: "var(--color-border)" }}
+            isAnimationActive={false}
+          />
+          {resolvedAreas.map((areaProps, index) => {
+            const dataKey =
+              typeof areaProps.dataKey === "string" || typeof areaProps.dataKey === "number"
+                ? areaProps.dataKey
+                : index;
+
+            return <Area key={String(dataKey)} type={areaProps.type ?? "monotone"} {...areaProps} />;
+          })}
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
+export type RechartsTooltipFormatter = TooltipContentProps<ValueType, NameType>["formatter"];
