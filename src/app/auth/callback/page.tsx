@@ -1,36 +1,45 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import { UniversalLoader } from "@/components/ui/universal-loader";
 import { IS_WHITELABEL_MODE } from "@/config/whitelabel";
 import { exchangeHandoff } from "@/features/auth/api/auth";
 import { isSignInConfigured, sendToRootHome, sendToRootLogin } from "@/lib/auth/root";
 import { getReturnUrl } from "@/lib/auth/utils";
+import { resetWhitelabelSignIn, sendToWhitelabelSignIn } from "@/lib/auth/whitelabel";
 import { logger } from "@/lib/logger";
 import { userService } from "@/services/api";
 import { useAuthStore } from "@/stores/auth-store";
+
+const WHITELABEL_SIGN_IN_ERROR = "We could not sign you in. Please try again.";
+
+function retryWhitelabelSignIn() {
+  resetWhitelabelSignIn();
+  sendToWhitelabelSignIn();
+}
 
 function HandoffCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setAuthWithOrganization = useAuthStore((state) => state.setAuthWithOrganization);
   const [error, setError] = useState<null | string>(null);
-  const started = useRef(false);
   const code = searchParams.get("code")?.trim() ?? "";
   const signInUnavailable = !code && !isSignInConfigured();
 
   useEffect(() => {
+    // A whitelabel build signs in again on its own, until that keeps failing.
+    if (IS_WHITELABEL_MODE && !code) {
+      if (!sendToWhitelabelSignIn()) setError(WHITELABEL_SIGN_IN_ERROR);
+      return;
+    }
     if (!code) {
       if (isSignInConfigured()) {
         sendToRootLogin();
       }
       return;
     }
-    if (started.current) return;
-    started.current = true;
-
     const gate: { cancelled: boolean } = { cancelled: false };
     void (async () => {
       try {
@@ -46,11 +55,11 @@ function HandoffCallback() {
       } catch (error_) {
         logger.error("Handoff exchange failed", { error: error_ });
         if (gate.cancelled) return;
-        setError(
-          IS_WHITELABEL_MODE
-            ? "This sign-in link has expired or is no longer valid. Please sign in again."
-            : "This sign-in link is invalid or you do not have a seat yet.",
-        );
+        if (IS_WHITELABEL_MODE) {
+          if (!sendToWhitelabelSignIn()) setError(WHITELABEL_SIGN_IN_ERROR);
+          return;
+        }
+        setError("This sign-in link is invalid or you do not have a seat yet.");
       }
     })();
 
@@ -74,10 +83,10 @@ function HandoffCallback() {
         {isSignInConfigured() ? (
           <button
             className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-            onClick={sendToRootHome}
+            onClick={IS_WHITELABEL_MODE ? retryWhitelabelSignIn : sendToRootHome}
             type="button"
           >
-            {IS_WHITELABEL_MODE ? "Back to sign in" : "Back to Home"}
+            {IS_WHITELABEL_MODE ? "Try again" : "Back to Home"}
           </button>
         ) : null}
       </div>

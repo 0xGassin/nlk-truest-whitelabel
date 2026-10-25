@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 
 import { API_BASE_URL } from "@/config";
+import { IS_WHITELABEL_MODE } from "@/config/whitelabel";
+import { getSessionToken } from "@/lib/auth/session-token";
+import { readEventStream } from "@/lib/event-stream";
 import { useAuthStore } from "@/stores/auth-store";
 
 export interface ScanUpdate {
@@ -25,51 +28,53 @@ export function useLiveUpdates(orgId?: string) {
   useEffect(() => {
     if (!orgId || !isAuthenticated) return;
 
+    // Read with fetch rather than EventSource, which cannot send the bearer
+    // token a whitelabel build authenticates with.
+    const controller = new AbortController();
     let reconnectTimeout: NodeJS.Timeout | null = null;
 
-    const handleMessage = (event: MessageEvent) => {
+    const handleData = (data: string) => {
       try {
-        const rawData: unknown = JSON.parse(String(event.data));
-        const data = rawData as ScanUpdate;
-        const id = data.id;
+        const rawData: unknown = JSON.parse(data);
+        const update = rawData as ScanUpdate;
+        const id = update.id;
         setUpdates((prev) => ({
           ...prev,
-          [id]: data,
+          [id]: update,
         }));
       } catch {
         // Ignore malformed SSE payloads
       }
     };
 
-    const handleError = () => {
-      if (currentEventSource) {
-        currentEventSource.removeEventListener("message", handleMessage);
-        currentEventSource.removeEventListener("error", handleError);
-        currentEventSource.close();
+    const connect = async () => {
+      const token = getSessionToken();
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/v1/organizations/${orgId}/live-updates`, {
+          credentials: IS_WHITELABEL_MODE ? "omit" : "include",
+          headers: {
+            Accept: "text/event-stream",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          signal: controller.signal,
+        });
+        if (response.ok && response.body) {
+          await readEventStream(response.body, handleData);
+        }
+      } catch {
+        // A dropped or refused connection is retried below.
       }
 
+      if (controller.signal.aborted) return;
       reconnectTimeout = setTimeout(() => {
-        connect();
+        void connect();
       }, 5000);
     };
 
-    let currentEventSource: EventSource | null = null;
-
-    const connect = () => {
-      const url = `${API_BASE_URL}/api/v1/organizations/${orgId}/live-updates`;
-      currentEventSource = new EventSource(url, { withCredentials: true });
-      currentEventSource.addEventListener("message", handleMessage);
-      currentEventSource.addEventListener("error", handleError);
-    };
-
-    connect();
+    void connect();
 
     return () => {
-      if (currentEventSource) {
-        currentEventSource.removeEventListener("message", handleMessage);
-        currentEventSource.removeEventListener("error", handleError);
-        currentEventSource.close();
-      }
+      controller.abort();
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
     };
   }, [orgId, isAuthenticated]);

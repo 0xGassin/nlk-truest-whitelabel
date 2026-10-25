@@ -9,6 +9,11 @@ import { timingSafeEqual } from "node:crypto";
  * read from a non-NEXT_PUBLIC_ variable and used only here, in the Node
  * runtime. The browser receives a one-time access code and nothing else.
  *
+ * GET signs the visitor in without a form: it mints a code and redirects to
+ * /auth/callback, carrying returnUrl along. The browser lands here whenever
+ * it has no valid session (see src/lib/auth/whitelabel.ts). POST checks the
+ * demo credentials from the /login form and returns the code as JSON.
+ *
  * Sign-in is two calls against nulink-root:
  *
  *   1. POST /partner/orgs            provision the client organization
@@ -125,6 +130,79 @@ async function resolveOrgID(apiKey: string): Promise<null | string> {
   return orgID;
 }
 
+/**
+ * Mints a one-time access code for the client organization, or returns null
+ * when the partner API cannot. The cause is logged here for the operator.
+ */
+async function mintAccessCode(apiKey: string): Promise<null | string> {
+  let orgID: null | string;
+  let response: Response;
+  try {
+    orgID = await resolveOrgID(apiKey);
+    if (!orgID) return null;
+    response = await partnerFetch(`/partner/orgs/${encodeURIComponent(orgID)}/access`, apiKey);
+  } catch (error) {
+    console.error("[whitelabel] partner API unreachable", error);
+    return null;
+  }
+
+  if (!response.ok) {
+    // The upstream body can carry partner-account detail, so it is logged
+    // rather than forwarded to the browser.
+    console.error("[whitelabel] partner access request failed", {
+      org_id: orgID,
+      status: response.status,
+    });
+    // A rejected key is a deployment fault, not a bad password: say so once,
+    // loudly, instead of leaving the operator guessing.
+    if (response.status === 401 || response.status === 403) {
+      console.error("[whitelabel] the partner API rejected NULINK_PARTNER_API_KEY");
+    }
+    return null;
+  }
+
+  let code: unknown;
+  try {
+    const body = (await response.json()) as { data?: { code?: unknown } };
+    code = body.data?.code;
+  } catch {
+    code = undefined;
+  }
+
+  if (typeof code !== "string" || !code) {
+    console.error("[whitelabel] partner access response carried no code");
+    return null;
+  }
+  return code;
+}
+
+export async function GET(request: Request): Promise<NextResponse> {
+  const apiKey = process.env.NULINK_PARTNER_API_KEY ?? "";
+  const params = new URLSearchParams();
+
+  const returnUrl = new URL(request.url).searchParams.get("returnUrl");
+  if (returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//")) {
+    params.set("returnUrl", returnUrl);
+  }
+
+  if (apiKey) {
+    const code = await mintAccessCode(apiKey);
+    if (code) params.set("code", code);
+  } else {
+    console.error("[whitelabel] sign-in is not configured: NULINK_PARTNER_API_KEY is required");
+  }
+
+  // Without a code the callback shows its sign-in error state.
+  if (!params.has("code")) params.set("error", "signin");
+
+  // A relative Location keeps the redirect on whatever origin the browser
+  // used, which request.url may not reflect behind a proxy.
+  return new NextResponse(null, {
+    headers: { "Cache-Control": "no-store", Location: `/auth/callback?${params.toString()}` },
+    status: 303,
+  });
+}
+
 export async function POST(request: Request): Promise<NextResponse> {
   const apiKey = process.env.NULINK_PARTNER_API_KEY ?? "";
   const demoEmail = process.env.WHITELABEL_DEMO_EMAIL ?? "";
@@ -158,46 +236,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     return json({ error: "Incorrect email or password." }, 401);
   }
 
-  const unavailable = json({ error: "Sign-in is temporarily unavailable. Please try again." }, 502);
-
-  let orgID: null | string;
-  let response: Response;
-  try {
-    orgID = await resolveOrgID(apiKey);
-    if (!orgID) return unavailable;
-    response = await partnerFetch(`/partner/orgs/${encodeURIComponent(orgID)}/access`, apiKey);
-  } catch (error) {
-    console.error("[whitelabel] partner API unreachable", error);
-    return unavailable;
+  const code = await mintAccessCode(apiKey);
+  if (!code) {
+    return json({ error: "Sign-in is temporarily unavailable. Please try again." }, 502);
   }
-
-  if (!response.ok) {
-    // The upstream body can carry partner-account detail, so it is logged
-    // rather than forwarded to the browser.
-    console.error("[whitelabel] partner access request failed", {
-      org_id: orgID,
-      status: response.status,
-    });
-    // A rejected key is a deployment fault, not a bad password: say so once,
-    // loudly, instead of leaving the operator guessing.
-    if (response.status === 401 || response.status === 403) {
-      console.error("[whitelabel] the partner API rejected NULINK_PARTNER_API_KEY");
-    }
-    return unavailable;
-  }
-
-  let code: unknown;
-  try {
-    const body = (await response.json()) as { data?: { code?: unknown } };
-    code = body.data?.code;
-  } catch {
-    code = undefined;
-  }
-
-  if (typeof code !== "string" || !code) {
-    console.error("[whitelabel] partner access response carried no code");
-    return unavailable;
-  }
-
   return json({ code }, 200);
 }

@@ -4,11 +4,13 @@
  * to the root login screen. After login, the redirect continues through the
  * root handoff back into Exposure.
  *
- * A whitelabel build has no root session: the partner signs the user in and
- * this app exchanges a partner-issued code instead. Every redirect below
+ * A whitelabel build has no root session: this app signs the user in itself
+ * with a partner-issued code (see ./whitelabel.ts). Every redirect below
  * therefore stays on this origin when IS_WHITELABEL_MODE is set.
  */
 import { IS_WHITELABEL_MODE, WHITELABEL_LOGIN_PATH } from "@/config/whitelabel";
+
+import { sendToWhitelabelSignIn } from "./whitelabel";
 
 const ROOT_APP_URL_DEFAULT = "https://app.nulinksec.com";
 const LOCAL_AUTH_MODE_KEY = "nulink.local-auth-mode";
@@ -69,9 +71,7 @@ export function sendToRootHandoff(): void {
 
 export function sendToRootLogin(): void {
   if (IS_WHITELABEL_MODE) {
-    if (globalThis.location.pathname !== WHITELABEL_LOGIN_PATH) {
-      globalThis.location.assign(WHITELABEL_LOGIN_PATH);
-    }
+    sendToWhitelabelSignIn();
     return;
   }
   if (isLocalAuthMode()) {

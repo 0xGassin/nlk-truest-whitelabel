@@ -2,6 +2,8 @@ import type { User } from "@/types";
 
 import { create } from "zustand";
 
+import { IS_WHITELABEL_MODE } from "@/config/whitelabel";
+import { getSessionToken } from "@/lib/auth/session-token";
 import { organizationService, userService } from "@/services/api";
 
 interface AuthState {
@@ -26,9 +28,10 @@ type AuthStore = AuthActions & AuthState;
 /**
  * Authentication state for the exposure-management API.
  *
- * The API stores the JWT in an HttpOnly cookie, so the browser does not keep
- * or send an access token from JavaScript. The store only tracks the current
- * user and asks the API to validate the cookie on startup.
+ * The API stores the JWT in an HttpOnly cookie, or in a whitelabel build the
+ * API client sends a bearer token (see src/lib/auth/session-token.ts). The
+ * store only tracks the current user and asks the API to validate the
+ * session on startup.
  */
 export const useAuthStore = create<AuthStore>((set, get) => ({
   clearAuth: () => {
@@ -47,6 +50,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
     if (state.isAuthenticated && state.user) {
       set({ isLoading: false });
+      return;
+    }
+
+    // A whitelabel build without a token has no session to validate.
+    if (IS_WHITELABEL_MODE && !getSessionToken()) {
+      set({ error: null, isAuthenticated: false, isLoading: false, user: null });
       return;
     }
 

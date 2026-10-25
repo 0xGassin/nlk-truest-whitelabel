@@ -29,6 +29,12 @@ export interface AuthResponse {
   user: User;
 }
 
+/** A whitelabel callback exchange returns a bearer token instead of a cookie. */
+export interface TokenAuthResponse extends AuthResponse {
+  expires_at: string;
+  token: string;
+}
+
 export interface RegisterResponse {
   user: User;
 }

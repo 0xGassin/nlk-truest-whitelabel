@@ -37,8 +37,9 @@ function safeReturnUrl(): null | string {
  * The form posts to this app's own server, which checks the credentials and
  * mints a one-time access code through the partner API. The code is then
  * handed to /auth/callback, the same route nulink-root's handoff uses, which
- * exchanges it for the Exposure session cookie. Every API call after that is
- * the ordinary cookie-authenticated one, against the existing routes.
+ * exchanges it for a bearer token. This app runs on a different site from the
+ * API, where the API's session cookie would be dropped, so every API call
+ * after that carries the token instead, against the existing routes.
  *
  * The code is single-use and expires in 60 seconds, so it goes straight to
  * the callback and is stripped from the URL there.
