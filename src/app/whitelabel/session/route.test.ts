@@ -27,6 +27,7 @@ function sessionGet(cookie?: string): Request {
 
 /** The Set-Cookie value POST hands back after a successful sign-in. */
 function proofCookieFrom(response: Response): string {
+  const header = response.headers.get("set-cookie") ?? "";
   return header.split(";", 1)[0] ?? "";
 }
 
